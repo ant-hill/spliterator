@@ -9,9 +9,9 @@ public class RectangleSpliterator extends Spliterators.AbstractIntSpliterator {
 
     private final int innerLength;
     private final int[][] array;
-    private final int startOuterInclusive;
-    private final int endOuterExclusive;
-    private final int startInnerInclusive;
+    private int startOuterInclusive;
+    private int endOuterExclusive;
+    private int startInnerInclusive;
 
     public RectangleSpliterator(int[][] array) {
         this(array, 0, array.length, 0);
@@ -27,20 +27,51 @@ public class RectangleSpliterator extends Spliterators.AbstractIntSpliterator {
         this.startInnerInclusive = startInnerInclusive;
     }
 
+
+    private int getOuterLength() {
+        return endOuterExclusive - startOuterInclusive;
+    }
+
+    private int getInnerLength() {
+        return innerLength - startInnerInclusive;
+    }
+
+
     @Override
     public OfInt trySplit() {
-        // TODO
-        throw new UnsupportedOperationException();
+        int innerSize = getInnerLength();
+        int outerSize = getOuterLength();
+        if(outerSize<2){
+            return null;
+        }
+
+        final int mid = startOuterInclusive + outerSize/2;
+
+        final RectangleSpliterator res = new RectangleSpliterator(array, startOuterInclusive, mid,0);
+        startOuterInclusive = mid;
+        return res;
     }
 
     @Override
     public long estimateSize() {
-        return ((long) endOuterExclusive - startOuterInclusive)*innerLength - startInnerInclusive;
+        return ((long) endOuterExclusive - startOuterInclusive) * innerLength - startInnerInclusive;
     }
 
     @Override
     public boolean tryAdvance(IntConsumer action) {
-        // TODO
-        throw new UnsupportedOperationException();
+        if(startInnerInclusive >= innerLength){
+            startOuterInclusive++;
+            startInnerInclusive = 0;
+        }
+
+        if (startOuterInclusive >= endOuterExclusive) {
+            return false;
+        }
+
+        final int value = array[startOuterInclusive][startInnerInclusive];
+        ++startInnerInclusive;
+        action.accept(value);
+
+        return true;
     }
 }
